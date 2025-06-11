@@ -1,6 +1,11 @@
-# OCR Camera App 📸💬
+# EduVision - text recognition powered by llm to improve digitalization in education
 
-A modern web application that captures images from your camera, extracts text using OCR, and provides an AI-powered chat interface to discuss the extracted text.
+Final Project Teknologi Multimedia:
+
+- Daffa Rajendra Priyatama 5027231009
+- Kevin Anugerah Faza 5027231027
+- RM Novian Malcolm B 5027231035
+- Dimas Andhika Diputra 5027231074
 
 ## ✨ Features
 
@@ -30,8 +35,6 @@ A modern web application that captures images from your camera, extracts text us
    ```bash
    python app.py
    ```
-
-   Or use the batch file: `run_app.bat`
 
 4. **Open Browser**: Go to `http://localhost:5000`
 
