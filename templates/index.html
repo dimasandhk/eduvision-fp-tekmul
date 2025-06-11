@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OCR Camera</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f5f7fa;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        width: 100%;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .header h1 {
+        color: #1f2937;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .header p {
+        color: #6b7280;
+        font-size: 1rem;
+      }
+
+      .camera-section {
+        text-align: center;
+      }
+
+      #video {
+        width: 100%;
+        max-width: 480px;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        background: #f3f4f6;
+      }
+
+      .controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 140px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #2563eb;
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-success:hover:not(:disabled) {
+        background: #059669;
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #dc2626;
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      .result-section {
+        display: none;
+        margin-top: 2rem;
+      }
+
+      .result-image {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+      }
+
+      .extracted-text {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: left;
+      }
+
+      .extracted-text h3 {
+        color: #1f2937;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+      }
+      .text-item {
+        background: white;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        border-left: 3px solid #3b82f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: move;
+        transition: all 0.2s ease;
+      }
+
+      .text-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .text-item.dragging {
+        opacity: 0.5;
+        transform: rotate(2deg);
+      }
+
+      .text-item.selected {
+        border-left-color: #10b981;
+        background: #f0fdf4;
+      }
+
+      .text-item-content {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        gap: 0.75rem;
+      }
+
+      .text-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: #10b981;
+        cursor: pointer;
+      }
+
+      .text-content {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .drag-handle {
+        color: #94a3b8;
+        cursor: move;
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+      }
+
+      .selection-controls {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: none;
+      }
+
+      .selection-controls.show {
+        display: block;
+      }
+
+      .control-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-small {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-small:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+      }
+
+      .selected-count {
+        color: #059669;
+        font-weight: 600;
+        margin-right: 1rem;
+      }
+
+      .confidence {
+        color: #6b7280;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .status {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-size: 0.9rem;
+      }
+
+      .status.info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+      }
+
+      .status.error {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+      }
+
+      @media (max-width: 640px) {
+        .container {
+          padding: 1.5rem;
+        }
+
+        .header h1 {
+          font-size: 1.75rem;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .btn {
+          width: 100%;
+          max-width: 280px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📸 OCR Camera</h1>
+        <p>Capture text from your camera</p>
+      </div>
+
+      <div class="camera-section">
+        <video id="video" autoplay playsinline></video>
+
+        <div class="controls">
+          <button id="startCamera" class="btn btn-primary">
+            📹 Start Camera
+          </button>
+          <button id="capture" class="btn btn-success" disabled>
+            📷 Capture & Analyze
+          </button>
+        </div>
+
+        <div id="status" class="status info" style="display: none"></div>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing image...</p>
+      </div>
+
+      <div class="result-section" id="resultSection">
+        <img id="resultImage" class="result-image" alt="Processed image" />
+        <div class="extracted-text" id="extractedText">
+          <h3>📝 Extracted Text</h3>
+          <div class="selection-controls" id="selectionControls">
+            <div class="control-buttons">
+              <span class="selected-count" id="selectedCount"
+                >0 items selected</span
+              >
+              <button class="btn-small" onclick="ocrCamera.selectAll()">
+                Select All
+              </button>
+              <button class="btn-small" onclick="ocrCamera.selectNone()">
+                Select None
+              </button>
+              <button class="btn-small" onclick="ocrCamera.reverseOrder()">
+                Reverse Order
+              </button>
+            </div>
+            <p style="margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem">
+              ✓ Check items to include • 🖱️ Drag to reorder
+            </p>
+          </div>
+          <div id="textItems"></div>
+        </div>
+
+        <div class="controls">
+          <button id="acceptImage" class="btn btn-success">
+            ✅ Start Chat
+          </button>
+          <button id="retakeImage" class="btn btn-danger">🔄 Try Again</button>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="canvas" style="display: none"></canvas>
+
+    <script>
+      class OCRCamera {
+        constructor() {
+          this.video = document.getElementById("video");
+          this.canvas = document.getElementById("canvas");
+          this.ctx = this.canvas.getContext("2d");
+          this.stream = null;
+          this.extractedTextData = [];
+          this.selectedTextIndices = new Set();
+
+          this.initializeElements();
+          this.bindEvents();
+        }
+
+        initializeElements() {
+          this.startCameraBtn = document.getElementById("startCamera");
+          this.captureBtn = document.getElementById("capture");
+          this.acceptBtn = document.getElementById("acceptImage");
+          this.retakeBtn = document.getElementById("retakeImage");
+          this.status = document.getElementById("status");
+          this.loading = document.getElementById("loading");
+          this.resultSection = document.getElementById("resultSection");
+          this.resultImage = document.getElementById("resultImage");
+          this.textItems = document.getElementById("textItems");
+          this.selectionControls = document.getElementById("selectionControls");
+          this.selectedCount = document.getElementById("selectedCount");
+        }
+
+        bindEvents() {
+          this.startCameraBtn.addEventListener("click", () =>
+            this.startCamera()
+          );
+          this.captureBtn.addEventListener("click", () => this.captureImage());
+          this.acceptBtn.addEventListener("click", () => this.acceptImage());
+          this.retakeBtn.addEventListener("click", () => this.retakeImage());
+        }
+
+        async startCamera() {
+          try {
+            this.showStatus("Starting camera...", "info");
+
+            this.stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            });
+
+            this.video.srcObject = this.stream;
+            this.startCameraBtn.disabled = true;
+            this.captureBtn.disabled = false;
+
+            this.showStatus(
+              'Camera ready! Click "Capture & Analyze" to take a photo.',
+              "info"
+            );
+          } catch (error) {
+            console.error("Error starting camera:", error);
+            this.showStatus(
+              "Error starting camera. Please check permissions.",
+              "error"
+            );
+          }
+        }
+
+        captureImage() {
+          this.canvas.width = this.video.videoWidth;
+          this.canvas.height = this.video.videoHeight;
+          this.ctx.drawImage(this.video, 0, 0);
+          const imageData = this.canvas.toDataURL("image/png");
+          this.processImage(imageData);
+        }
+
+        async processImage(imageData) {
+          try {
+            this.showLoading(true);
+            this.captureBtn.disabled = true;
+
+            const response = await fetch("/process_image", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ image: imageData })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              this.showResults(result);
+            } else {
+              this.showStatus(`Error: ${result.error}`, "error");
+              this.captureBtn.disabled = false;
+            }
+          } catch (error) {
+            console.error("Error processing image:", error);
+            this.showStatus(
+              "Error processing image. Please try again.",
+              "error"
+            );
+            this.captureBtn.disabled = false;
+          } finally {
+            this.showLoading(false);
+          }
+        }
+        showResults(result) {
+          this.resultImage.src = result.image_with_boxes;
+          this.extractedTextData = result.extracted_text || [];
+
+          this.textItems.innerHTML = "";
+          if (this.extractedTextData.length > 0) {
+            this.extractedTextData.forEach((item, index) => {
+              const textDiv = document.createElement("div");
+              textDiv.className = "text-item";
+              textDiv.draggable = true;
+              textDiv.dataset.index = index;
+              textDiv.innerHTML = `
+                <div class="text-item-content">
+                  <span class="drag-handle">⋮⋮</span>
+                  <input type="checkbox" class="text-checkbox" data-index="${index}" ${
+                this.selectedTextIndices.has(index) ? "checked" : ""
+              }>
+                  <div class="text-content">
+                    <span>${item.text}</span>
+                    <span class="confidence">${(item.confidence * 100).toFixed(
+                      1
+                    )}%</span>
+                  </div>
+                </div>
+              `;
+
+              // Add event listeners
+              const checkbox = textDiv.querySelector(".text-checkbox");
+              checkbox.addEventListener("change", (e) =>
+                this.toggleTextSelection(index, e.target.checked)
+              );
+
+              // Add drag and drop listeners
+              textDiv.addEventListener("dragstart", (e) =>
+                this.handleDragStart(e)
+              );
+              textDiv.addEventListener("dragover", (e) =>
+                this.handleDragOver(e)
+              );
+              textDiv.addEventListener("drop", (e) => this.handleDrop(e));
+              textDiv.addEventListener("dragend", (e) => this.handleDragEnd(e));
+
+              this.textItems.appendChild(textDiv);
+            });
+
+            this.selectionControls.classList.add("show");
+            this.updateSelectedCount();
+          } else {
+            this.textItems.innerHTML = "<p>No text detected in the image.</p>";
+            this.selectionControls.classList.remove("show");
+          }
+
+          this.resultSection.style.display = "block";
+          this.status.style.display = "none";
+        }
+        acceptImage() {
+          // Send selected text to backend
+          const selectedText = Array.from(this.selectedTextIndices)
+            .sort((a, b) => a - b) // Maintain current order
+            .map((index) => this.extractedTextData[index]);
+
+          if (selectedText.length === 0) {
+            alert("Please select at least one text item to continue.");
+            return;
+          }
+
+          // Update session with selected text
+          fetch("/update_selected_text", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ selectedText })
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                window.location.href = "/chat";
+              } else {
+                console.error("Error updating selected text:", data.error);
+                window.location.href = "/chat"; // Continue anyway
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              window.location.href = "/chat"; // Continue anyway
+            });
+        }
+
+        toggleTextSelection(index, isSelected) {
+          if (isSelected) {
+            this.selectedTextIndices.add(index);
+          } else {
+            this.selectedTextIndices.delete(index);
+          }
+
+          // Update visual state
+          const textItem = this.textItems.querySelector(
+            `[data-index="${index}"]`
+          );
+          if (textItem) {
+            textItem.classList.toggle("selected", isSelected);
+          }
+
+          this.updateSelectedCount();
+        }
+
+        selectAll() {
+          this.selectedTextIndices.clear();
+          this.extractedTextData.forEach((_, index) => {
+            this.selectedTextIndices.add(index);
+          });
+          this.updateUI();
+        }
+
+        selectNone() {
+          this.selectedTextIndices.clear();
+          this.updateUI();
+        }
+
+        reverseOrder() {
+          const items = Array.from(this.textItems.children);
+          items.reverse().forEach((item) => this.textItems.appendChild(item));
+
+          // Update data array order
+          this.extractedTextData.reverse();
+
+          // Update indices
+          this.updateDataIndices();
+        }
+
+        updateUI() {
+          const checkboxes = this.textItems.querySelectorAll(".text-checkbox");
+          checkboxes.forEach((checkbox, index) => {
+            const isSelected = this.selectedTextIndices.has(index);
+            checkbox.checked = isSelected;
+
+            const textItem = checkbox.closest(".text-item");
+            textItem.classList.toggle("selected", isSelected);
+          });
+          this.updateSelectedCount();
+        }
+
+        updateSelectedCount() {
+          const count = this.selectedTextIndices.size;
+          this.selectedCount.textContent = `${count} item${
+            count !== 1 ? "s" : ""
+          } selected`;
+        }
+
+        updateDataIndices() {
+          const items = this.textItems.querySelectorAll(".text-item");
+          const newSelectedIndices = new Set();
+
+          items.forEach((item, newIndex) => {
+            const oldIndex = parseInt(item.dataset.index);
+            item.dataset.index = newIndex;
+
+            const checkbox = item.querySelector(".text-checkbox");
+            checkbox.dataset.index = newIndex;
+
+            // Update selected indices
+            if (this.selectedTextIndices.has(oldIndex)) {
+              newSelectedIndices.add(newIndex);
+            }
+          });
+
+          this.selectedTextIndices = newSelectedIndices;
+        }
+
+        // Drag and Drop handlers
+        handleDragStart(e) {
+          e.dataTransfer.setData("text/plain", "");
+          e.target.classList.add("dragging");
+          this.draggedElement = e.target;
+        }
+
+        handleDragOver(e) {
+          e.preventDefault();
+          const afterElement = this.getDragAfterElement(
+            this.textItems,
+            e.clientY
+          );
+          const dragging = this.textItems.querySelector(".dragging");
+
+          if (afterElement == null) {
+            this.textItems.appendChild(dragging);
+          } else {
+            this.textItems.insertBefore(dragging, afterElement);
+          }
+        }
+
+        handleDrop(e) {
+          e.preventDefault();
+        }
+
+        handleDragEnd(e) {
+          e.target.classList.remove("dragging");
+
+          // Update data order based on DOM order
+          const newOrder = [];
+          const items = this.textItems.querySelectorAll(".text-item");
+
+          items.forEach((item) => {
+            const oldIndex = parseInt(item.dataset.index);
+            newOrder.push(this.extractedTextData[oldIndex]);
+          });
+
+          this.extractedTextData = newOrder;
+          this.updateDataIndices();
+        }
+
+        getDragAfterElement(container, y) {
+          const draggableElements = [
+            ...container.querySelectorAll(".text-item:not(.dragging)")
+          ];
+
+          return draggableElements.reduce(
+            (closest, child) => {
+              const box = child.getBoundingClientRect();
+              const offset = y - box.top - box.height / 2;
+
+              if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+              } else {
+                return closest;
+              }
+            },
+            { offset: Number.NEGATIVE_INFINITY }
+          ).element;
+        }
+
+        retakeImage() {
+          this.resultSection.style.display = "none";
+          this.captureBtn.disabled = false;
+          this.showStatus("Ready to capture another image.", "info");
+        }
+
+        showStatus(message, type) {
+          this.status.textContent = message;
+          this.status.className = `status ${type}`;
+          this.status.style.display = "block";
+        }
+
+        showLoading(show) {
+          this.loading.style.display = show ? "block" : "none";
+        }
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        window.ocrCamera = new OCRCamera();
+      });
+    </script>
+  </body>
+</html>
